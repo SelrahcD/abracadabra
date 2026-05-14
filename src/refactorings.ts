@@ -18,6 +18,7 @@ export interface RefactoringConfig {
     key: string;
     operation: Refactoring;
   };
+  crossFile?: boolean;
 }
 
 export interface RefactoringWithActionProviderConfig {
@@ -35,6 +36,7 @@ export interface RefactoringWithActionProviderConfig {
     ) => Visitor;
     updateMessage?: (path: NodePath) => string;
   };
+  crossFile?: boolean;
 }
 
 export type Refactoring = (state: RefactoringState) => EditorCommand;

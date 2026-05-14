@@ -10,7 +10,8 @@ const config: RefactoringWithActionProviderConfig = {
   actionProvider: {
     message: "Change signature",
     createVisitor
-  }
+  },
+  crossFile: true
 };
 
 export default config;

@@ -5,6 +5,7 @@ node_modules
 .vscode-test-web/
 *.vsix
 .rubberduck/
+sandbox/
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,visualstudiocode,yarn
 # Edit at https://www.toptal.com/developers/gitignore?templates=node,visualstudiocode,yarn

@@ -28,6 +28,7 @@
     ".vscode-test",
     "gitignore",
     "src/playground",
-    "test/fixtures"
+    "test/fixtures",
+    "sandbox"
   ]
 }

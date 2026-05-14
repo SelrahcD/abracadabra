@@ -83,3 +83,40 @@ describe("apply --stdout", () => {
     expect(readFileSync(file, "utf-8")).toBe(original);
   });
 });
+
+describe("apply errors", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "abracadabra-apply-"));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("returns NOT_APPLICABLE when the refactoring does not match", async () => {
+    const file = join(dir, "foo.ts");
+    writeFileSync(file, `const x = 1;\n`);
+
+    const result = await runApplyCommand({
+      name: "flip-if-else",
+      position: `${file}:1:1`,
+      json: true
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(JSON.parse(result.stdout).status).toBe("not-applicable");
+  });
+
+  it("returns INVALID_ARGS for unknown refactoring", async () => {
+    const file = join(dir, "foo.ts");
+    writeFileSync(file, "x");
+
+    const result = await runApplyCommand({
+      name: "nope",
+      position: `${file}:1:1`,
+      json: true
+    });
+
+    expect(result.exitCode).toBe(3);
+  });
+});

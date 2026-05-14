@@ -41,3 +41,33 @@ describe("askUserInput", () => {
     await expect(editor.askUserInput()).rejects.toBeInstanceOf(NeedsInputError);
   });
 });
+
+describe("askUserChoice", () => {
+  const choices = [
+    { label: "Variable", value: "variable" },
+    { label: "Constant", value: "constant" }
+  ];
+
+  it("throws NeedsInputError when no response is queued", async () => {
+    const editor = new CliEditor("");
+
+    await expect(
+      editor.askUserChoice(choices, "Pick one")
+    ).rejects.toMatchObject({
+      name: "NeedsInputError",
+      prompt: {
+        id: "user-choice",
+        type: "choice",
+        choices,
+        placeHolder: "Pick one"
+      }
+    });
+  });
+
+  it("returns the queued choice when available", async () => {
+    const editor = new CliEditor("");
+    editor.replyWith([{ type: "choice", value: choices[1] }]);
+
+    await expect(editor.askUserChoice(choices)).resolves.toEqual(choices[1]);
+  });
+});

@@ -21,6 +21,30 @@ export class CliEditor extends InMemoryEditor {
     });
   }
 
+  async askUserChoice<T>(
+    choices: {
+      value: T;
+      label: string;
+      description?: string;
+      icon?: "file-code";
+    }[],
+    placeHolder?: string
+  ): Promise<
+    | { value: T; label: string; description?: string; icon?: "file-code" }
+    | undefined
+  > {
+    const queued = this.shiftResponse("choice");
+    if (queued !== undefined) {
+      return queued.value as { value: T; label: string };
+    }
+    throw new NeedsInputError({
+      id: "user-choice",
+      type: "choice",
+      choices: choices.map((c) => ({ label: c.label, value: c.value })),
+      placeHolder
+    });
+  }
+
   private shiftResponse<T extends QueuedResponse["type"]>(
     expectedType: T
   ): Extract<QueuedResponse, { type: T }> | undefined {

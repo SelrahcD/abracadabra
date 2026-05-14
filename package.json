@@ -40,6 +40,12 @@
   },
   "main": "./out/extension.js",
   "browser": "./out/extension-browser.js",
+  "bin": "./out/cli/index.js",
+  "files": [
+    "out/cli/",
+    "out/extension.js",
+    "out/extension-browser.js"
+  ],
   "scripts": {
     "prepare": "husky",
     "hygen": "hygen",
@@ -50,9 +56,10 @@
     "test:ci": "yarn typecheck && yarn test && yarn test:contract",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint src --ignore-pattern '**/playground/**'",
-    "build": "node esbuild.config.js --node --browser",
+    "build": "node esbuild.config.js --node --browser --cli",
     "build:node": "node esbuild.config.js --node",
     "build:browser": "node esbuild.config.js --browser",
+    "build:cli": "node esbuild.config.js --cli",
     "prepackage": "rm -rf dist/*.vsix && rm -rf out/",
     "vscode:prepublish": "yarn build --production",
     "package": "vsce package --no-dependencies && yarn postpackage",

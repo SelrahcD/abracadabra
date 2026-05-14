@@ -4771,6 +4771,8 @@ __metadata:
     tsup: "npm:8.5.1"
     typescript: "npm:5.9.3"
     typescript-eslint: "npm:8.54.0"
+  bin:
+    abracadabra: ./out/cli/index.js
   languageName: unknown
   linkType: soft
 

@@ -26,3 +26,15 @@ jobs:
 
       - name: Run CI Tests
         run: yarn test:ci
+
+      - name: Build CLI
+        run: yarn build:cli
+
+      - name: CLI smoke — list
+        run: node out/cli/index.js list --json | head -c 200
+
+      - name: CLI smoke — applicable
+        run: node out/cli/index.js applicable test/fixtures/cli-smoke/foo.ts:1:1 --json
+
+      - name: CLI smoke — apply --dry-run
+        run: node out/cli/index.js apply flip-if-else test/fixtures/cli-smoke/foo.ts:1:1 --dry-run

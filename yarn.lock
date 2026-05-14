@@ -4025,6 +4025,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/diff@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "@types/diff@npm:8.0.0"
+  dependencies:
+    diff: "npm:*"
+  checksum: 10c0/c6e3376abeac8bc77b33252afc239a3cfc2729ecf59abcf00fa0f0eca8c505fd3a375a99a64afecdbb97fbec77b9a6aa8a8918f4d53fd5b45638d609343717cc
+  languageName: node
+  linkType: hard
+
 "@types/esrecurse@npm:^4.3.1":
   version: 4.3.1
   resolution: "@types/esrecurse@npm:4.3.1"
@@ -4723,6 +4732,7 @@ __metadata:
     "@eslint/js": "npm:9.39.2"
     "@types/babel__traverse": "npm:7.28.0"
     "@types/chai": "npm:5.2.2"
+    "@types/diff": "npm:^8.0.0"
     "@types/glob": "npm:9.0.0"
     "@types/jest": "npm:30.0.0"
     "@types/jsdom": "npm:27.0.0"
@@ -4735,6 +4745,7 @@ __metadata:
     "@vscode/vsce": "npm:3.7.1"
     babel-jest: "npm:30.3.0"
     chai: "npm:6.2.2"
+    diff: "npm:^9.0.0"
     esbuild: "npm:0.27.2"
     eslint: "npm:10.1.0"
     glob: "npm:13.0.6"
@@ -6476,6 +6487,13 @@ __metadata:
   version: 3.1.0
   resolution: "detect-newline@npm:3.1.0"
   checksum: 10c0/c38cfc8eeb9fda09febb44bcd85e467c970d4e3bf526095394e5a4f18bc26dd0cf6b22c69c1fa9969261521c593836db335c2795218f6d781a512aea2fb8209d
+  languageName: node
+  linkType: hard
+
+"diff@npm:*, diff@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "diff@npm:9.0.0"
+  checksum: 10c0/a971cc88f66071a33bd3942db2f51b57d484e9856265ae45cf44fb28ab2fde91f132d9c26d8be0fb6082d2be94d29e1295c1adb251b7461935d6a2dd304cd161
   languageName: node
   linkType: hard
 

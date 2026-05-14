@@ -12,7 +12,6 @@ const production = process.argv.includes("--production");
  * @type {esbuild.BuildOptions}
  */
 const commonOptions = {
-  entryPoints: ["./src/extension.ts"],
   format: "cjs",
   bundle: true,
   minify: production,
@@ -28,11 +27,13 @@ const commonOptions = {
 const options = [
   {
     ...commonOptions,
+    entryPoints: ["./src/extension.ts"],
     outfile: "out/extension.js",
     platform: "node"
   },
   {
     ...commonOptions,
+    entryPoints: ["./src/extension.ts"],
     outfile: "out/extension-browser.js",
     platform: "browser",
     inject: [require.resolve("node-stdlib-browser/helpers/esbuild/shim")],
@@ -44,17 +45,28 @@ const options = [
       Buffer: "Buffer"
     },
     plugins: [plugin(stdLibBrowser)]
+  },
+  {
+    ...commonOptions,
+    entryPoints: ["./src/cli/index.ts"],
+    outfile: "out/cli/index.js",
+    platform: "node",
+    banner: { js: "#!/usr/bin/env node" }
   }
 ];
 
+const targetFlag = (option) => option.outfile.includes("/cli/") ? "cli" : option.platform;
+
 options
-  .filter(({ platform }) => process.argv.includes(`--${platform}`))
+  .filter((option) => process.argv.includes(`--${targetFlag(option)}`))
   .forEach(async (option) => {
     const result = await esbuild.build(option);
+    if (option.outfile.includes("/cli/")) {
+      await fs.chmod(option.outfile, 0o755);
+    }
     if (production) return;
-
     await fs.writeFile(
-      `out/meta-${option.platform}.json`,
+      `out/meta-${targetFlag(option)}.json`,
       JSON.stringify(result.metafile)
     );
   });

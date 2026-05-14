@@ -4,12 +4,14 @@ import {
   NeedsInputError,
   QueuedResponse
 } from "../../editor/adapters/cli-editor";
+import { RelativePath } from "../../editor/path";
 import { Selection } from "../../editor/selection";
 import { executeRefactoring, UserResponse } from "../../refactorings";
 import { parsePosition } from "../arguments";
 import { EXIT_CODES, formatJsonResult, formatUnifiedDiff } from "../output";
 import { findRefactoring } from "../registry";
 import { encodeStateToken } from "../state-token";
+import { scanWorkspace } from "../workspace";
 import { CommandResult } from "./list";
 
 export type ApplyOptions = {
@@ -21,6 +23,12 @@ export type ApplyOptions = {
   write?: boolean;
   stateToken?: string;
   responses?: UserResponse[];
+  workspaceRoot?: string;
+  ignoredFolders?: string[];
+  ignoredPatterns?: string[];
+  maxFileLines?: number;
+  maxFileSizeKb?: number;
+  files?: string[];
 };
 
 export async function runApplyCommand(
@@ -37,6 +45,28 @@ export async function runApplyCommand(
           })
         : "",
       stderr: `Unknown refactoring '${opts.name}'.`
+    };
+  }
+
+  if (cfg.crossFile && !opts.write && !opts.dryRun) {
+    const msg = `'${opts.name}' modifies multiple files. Pass --write to apply, or --dry-run to preview.`;
+    return {
+      exitCode: EXIT_CODES.INVALID_ARGS,
+      stdout: opts.json
+        ? formatJsonResult({ status: "error", reason: msg })
+        : "",
+      stderr: msg
+    };
+  }
+
+  if (cfg.crossFile && opts.stdout) {
+    const msg = `'${opts.name}' modifies multiple files; --stdout is unsupported.`;
+    return {
+      exitCode: EXIT_CODES.INVALID_ARGS,
+      stdout: opts.json
+        ? formatJsonResult({ status: "error", reason: msg })
+        : "",
+      stderr: msg
     };
   }
 
@@ -62,6 +92,30 @@ export async function runApplyCommand(
     editor.replyWith(opts.responses.map(toQueued));
   }
 
+  const workspaceFiles: {
+    absolutePath: string;
+    relativePath: string;
+    content: string;
+    pathKey: RelativePath;
+  }[] = [];
+  if (cfg.crossFile) {
+    const root = opts.workspaceRoot ?? process.cwd();
+    const scanned = await scanWorkspace({
+      root,
+      ignoredFolders: opts.ignoredFolders ?? ["node_modules"],
+      ignoredPatterns: opts.ignoredPatterns ?? ["dist/*", "build/*"],
+      maxFileLines: opts.maxFileLines ?? 10000,
+      maxFileSizeKb: opts.maxFileSizeKb ?? 250,
+      files: opts.files
+    });
+
+    for (const f of scanned) {
+      const pathKey = new RelativePath(f.relativePath);
+      await editor.writeIn(pathKey, f.content);
+      workspaceFiles.push({ ...f, pathKey });
+    }
+  }
+
   try {
     await executeRefactoring(cfg.command.operation, editor);
   } catch (err) {
@@ -83,8 +137,29 @@ export async function runApplyCommand(
     throw err;
   }
 
-  const newCode = editor.code;
-  if (newCode === originalCode) {
+  const updates: { path: string; oldContent: string; newContent: string }[] =
+    [];
+
+  if (cfg.crossFile) {
+    for (const f of workspaceFiles) {
+      const newContent = await editor.codeOf(f.pathKey);
+      if (newContent !== f.content) {
+        updates.push({
+          path: f.absolutePath,
+          oldContent: f.content,
+          newContent
+        });
+      }
+    }
+  } else if (editor.code !== originalCode) {
+    updates.push({
+      path: parsedPosition.path,
+      oldContent: originalCode,
+      newContent: editor.code
+    });
+  }
+
+  if (updates.length === 0) {
     return {
       exitCode: EXIT_CODES.NOT_APPLICABLE,
       stdout: formatJsonResult({
@@ -94,34 +169,34 @@ export async function runApplyCommand(
     };
   }
 
-  const diff = formatUnifiedDiff(parsedPosition.path, originalCode, newCode);
+  const changes = updates.map((u) => ({
+    path: u.path,
+    diff: formatUnifiedDiff(u.path, u.oldContent, u.newContent)
+  }));
 
   if (opts.dryRun) {
     return {
       exitCode: EXIT_CODES.OK,
       stdout: opts.json
-        ? formatJsonResult({
-            status: "ok",
-            changes: [{ path: parsedPosition.path, diff }]
-          })
-        : diff
+        ? formatJsonResult({ status: "ok", changes })
+        : changes.map((c) => `=== ${c.path} ===\n${c.diff}`).join("\n\n")
     };
   }
 
   if (opts.stdout) {
     return {
       exitCode: EXIT_CODES.OK,
-      stdout: newCode
+      stdout: editor.code
     };
   }
 
-  writeFileSync(parsedPosition.path, newCode);
+  for (const u of updates) {
+    writeFileSync(u.path, u.newContent);
+  }
+
   return {
     exitCode: EXIT_CODES.OK,
-    stdout: formatJsonResult({
-      status: "ok",
-      changes: [{ path: parsedPosition.path, diff }]
-    })
+    stdout: formatJsonResult({ status: "ok", changes })
   };
 }
 

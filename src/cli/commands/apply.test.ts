@@ -3,6 +3,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { decodeStateToken } from "../state-token";
 import { runApplyCommand } from "./apply";
+ 
+type AnyResponse = any;
 
 describe("apply command — single-file happy path", () => {
   let dir: string;
@@ -154,12 +156,66 @@ describe("apply two-pass dialogue", () => {
       name: "rename-symbol",
       position: `${file}:1:7`,
       json: true,
-       
+
       responses: [{ id: "user-input", type: "input", value: "newName" } as any]
     });
 
     expect(turn2.exitCode).toBe(0);
     expect(readFileSync(file, "utf-8")).toContain("newName");
     expect(readFileSync(file, "utf-8")).not.toContain("oldName");
+  });
+});
+
+describe("apply multi-file", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "abracadabra-apply-"));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("rejects without --write", async () => {
+    const file = join(dir, "util.ts");
+    writeFileSync(file, `export function send(a, b) { return a + b; }\n`);
+
+    const result = await runApplyCommand({
+      name: "change-signature",
+      position: `${file}:1:17`,
+      json: true
+    });
+
+    expect(result.exitCode).toBe(3);
+    expect(result.stderr ?? result.stdout).toMatch(/--write/);
+  });
+
+  it("with --write applies edits across multiple files", async () => {
+    const util = join(dir, "util.ts");
+    const caller = join(dir, "caller.ts");
+    writeFileSync(util, `export function send(a, b) { return a + b; }\n`);
+    writeFileSync(caller, `import { send } from "./util";\nsend(1, 2);\n`);
+
+    const result = await runApplyCommand({
+      name: "change-signature",
+      position: `${util}:1:17`,
+      json: true,
+      write: true,
+      workspaceRoot: dir,
+      responses: [
+        {
+          id: "change-signature-positions",
+          type: "new positions",
+          positions: [
+            { label: "b", value: { startAt: 1, endAt: 0 } },
+            { label: "a", value: { startAt: 0, endAt: 1 } }
+          ],
+          references: []
+        } as AnyResponse
+      ]
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(readFileSync(util, "utf-8")).toMatch(/function send\(b, a\)/);
+    expect(readFileSync(caller, "utf-8")).toMatch(/send\(2, 1\)/);
   });
 });

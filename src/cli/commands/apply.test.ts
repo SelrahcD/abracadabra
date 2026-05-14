@@ -1,6 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { decodeStateToken } from "../state-token";
 import { runApplyCommand } from "./apply";
 
 describe("apply command — single-file happy path", () => {
@@ -118,5 +119,47 @@ describe("apply errors", () => {
     });
 
     expect(result.exitCode).toBe(3);
+  });
+});
+
+describe("apply two-pass dialogue", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "abracadabra-apply-"));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("first turn returns NEEDS_INPUT with a state-token; second turn applies", async () => {
+    const file = join(dir, "foo.ts");
+    writeFileSync(file, `const oldName = 1;\n`);
+
+    const turn1 = await runApplyCommand({
+      name: "rename-symbol",
+      position: `${file}:1:7`,
+      json: true
+    });
+
+    expect(turn1.exitCode).toBe(2);
+    const parsed1 = JSON.parse(turn1.stdout);
+    expect(parsed1.status).toBe("needs-input");
+    expect(parsed1.prompts[0].type).toBe("input");
+    expect(parsed1.stateToken.startsWith("v1.")).toBe(true);
+
+    const decoded = decodeStateToken(parsed1.stateToken);
+    expect(decoded.code).toContain("oldName");
+
+    const turn2 = await runApplyCommand({
+      name: "rename-symbol",
+      position: `${file}:1:7`,
+      json: true,
+       
+      responses: [{ id: "user-input", type: "input", value: "newName" } as any]
+    });
+
+    expect(turn2.exitCode).toBe(0);
+    expect(readFileSync(file, "utf-8")).toContain("newName");
+    expect(readFileSync(file, "utf-8")).not.toContain("oldName");
   });
 });

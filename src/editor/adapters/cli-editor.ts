@@ -1,5 +1,6 @@
-import { Code } from "../editor";
+import { Code, Command, Result } from "../editor";
 import { Position } from "../position";
+import { Selection } from "../selection";
 import { InMemoryEditor } from "./in-memory-editor";
 
 export class CliEditor extends InMemoryEditor {
@@ -67,7 +68,7 @@ export class CliEditor extends InMemoryEditor {
     });
   }
 
-  async delegate(): Promise<"ok" | "not supported"> {
+  async delegate(_command?: Command, _selection?: Selection): Promise<Result> {
     return "not supported";
   }
 

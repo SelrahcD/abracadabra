@@ -28,3 +28,31 @@ describe("apply command — single-file happy path", () => {
     expect(JSON.parse(result.stdout).status).toBe("ok");
   });
 });
+
+describe("apply --dry-run", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "abracadabra-apply-"));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("prints a diff and leaves the file untouched", async () => {
+    const file = join(dir, "foo.ts");
+    const original = `if (a) {\n  b;\n} else {\n  c;\n}\n`;
+    writeFileSync(file, original);
+
+    const result = await runApplyCommand({
+      name: "flip-if-else",
+      position: `${file}:1:1`,
+      json: false,
+      dryRun: true
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain(`--- ${file}`);
+    expect(result.stdout).toContain(`+++ ${file}`);
+    expect(readFileSync(file, "utf-8")).toBe(original);
+  });
+});

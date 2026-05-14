@@ -94,17 +94,26 @@ export async function runApplyCommand(
     };
   }
 
+  const diff = formatUnifiedDiff(parsedPosition.path, originalCode, newCode);
+
+  if (opts.dryRun) {
+    return {
+      exitCode: EXIT_CODES.OK,
+      stdout: opts.json
+        ? formatJsonResult({
+            status: "ok",
+            changes: [{ path: parsedPosition.path, diff }]
+          })
+        : diff
+    };
+  }
+
   writeFileSync(parsedPosition.path, newCode);
   return {
     exitCode: EXIT_CODES.OK,
     stdout: formatJsonResult({
       status: "ok",
-      changes: [
-        {
-          path: parsedPosition.path,
-          diff: formatUnifiedDiff(parsedPosition.path, originalCode, newCode)
-        }
-      ]
+      changes: [{ path: parsedPosition.path, diff }]
     })
   };
 }

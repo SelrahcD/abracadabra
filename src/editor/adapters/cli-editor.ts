@@ -45,6 +45,28 @@ export class CliEditor extends InMemoryEditor {
     });
   }
 
+  async askForPositions(
+    currentPositions: {
+      label: string;
+      value: { startAt: number; endAt: number; val?: string };
+    }[]
+  ): Promise<
+    { label: string; value: { startAt: number; endAt: number; val?: string } }[]
+  > {
+    const queued = this.shiftResponse("positions");
+    if (queued !== undefined) {
+      return queued.value as {
+        label: string;
+        value: { startAt: number; endAt: number; val?: string };
+      }[];
+    }
+    throw new NeedsInputError({
+      id: "change-signature-positions",
+      type: "positions",
+      positions: currentPositions
+    });
+  }
+
   private shiftResponse<T extends QueuedResponse["type"]>(
     expectedType: T
   ): Extract<QueuedResponse, { type: T }> | undefined {

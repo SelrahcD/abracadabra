@@ -71,3 +71,27 @@ describe("askUserChoice", () => {
     await expect(editor.askUserChoice(choices)).resolves.toEqual(choices[1]);
   });
 });
+
+describe("askForPositions", () => {
+  const positions = [
+    { label: "a", value: { startAt: 0, endAt: 0 } },
+    { label: "b", value: { startAt: 1, endAt: 1 } }
+  ];
+
+  it("throws NeedsInputError when no response is queued", async () => {
+    const editor = new CliEditor("");
+
+    await expect(editor.askForPositions(positions)).rejects.toMatchObject({
+      name: "NeedsInputError",
+      prompt: { id: "change-signature-positions", type: "positions", positions }
+    });
+  });
+
+  it("returns the queued positions when available", async () => {
+    const editor = new CliEditor("");
+    const reordered = [positions[1], positions[0]];
+    editor.replyWith([{ type: "positions", value: reordered }]);
+
+    await expect(editor.askForPositions(positions)).resolves.toEqual(reordered);
+  });
+});

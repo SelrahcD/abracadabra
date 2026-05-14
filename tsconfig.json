@@ -27,6 +27,7 @@
     "out",
     ".vscode-test",
     "gitignore",
-    "src/playground"
+    "src/playground",
+    "test/fixtures"
   ]
 }

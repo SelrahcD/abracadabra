@@ -12,7 +12,7 @@ export class CliEditor extends InMemoryEditor {
   async askUserInput(defaultValue?: string): Promise<string | undefined> {
     const queued = this.shiftResponse("input");
     if (queued !== undefined) {
-      return queued.value as string;
+      return queued.value;
     }
     throw new NeedsInputError({
       id: "user-input",
@@ -21,12 +21,12 @@ export class CliEditor extends InMemoryEditor {
     });
   }
 
-  private shiftResponse(
-    expectedType: "input" | "choice" | "positions"
-  ): QueuedResponse | undefined {
+  private shiftResponse<T extends QueuedResponse["type"]>(
+    expectedType: T
+  ): Extract<QueuedResponse, { type: T }> | undefined {
     const next = this.responseQueue[0];
     if (next?.type !== expectedType) return undefined;
-    return this.responseQueue.shift();
+    return this.responseQueue.shift() as Extract<QueuedResponse, { type: T }>;
   }
 
   replyWith(responses: QueuedResponse[]): void {

@@ -95,3 +95,19 @@ describe("askForPositions", () => {
     await expect(editor.askForPositions(positions)).resolves.toEqual(reordered);
   });
 });
+
+describe("delegate", () => {
+  it("returns 'not supported' for rename symbol", async () => {
+    const editor = new CliEditor("");
+    await expect(editor.delegate("rename symbol")).resolves.toBe(
+      "not supported"
+    );
+  });
+
+  it("returns 'not supported' for extract function", async () => {
+    const editor = new CliEditor("");
+    await expect(editor.delegate("extract function")).resolves.toBe(
+      "not supported"
+    );
+  });
+});

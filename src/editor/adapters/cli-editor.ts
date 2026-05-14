@@ -67,6 +67,10 @@ export class CliEditor extends InMemoryEditor {
     });
   }
 
+  async delegate(): Promise<"ok" | "not supported"> {
+    return "not supported";
+  }
+
   private shiftResponse<T extends QueuedResponse["type"]>(
     expectedType: T
   ): Extract<QueuedResponse, { type: T }> | undefined {

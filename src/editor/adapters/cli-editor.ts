@@ -5,9 +5,18 @@ import { InMemoryEditor } from "./in-memory-editor";
 
 export class CliEditor extends InMemoryEditor {
   private responseQueue: QueuedResponse[] = [];
+  private lastErrorReason: string | undefined;
 
   constructor(code: Code = "", position: Position = new Position(0, 0)) {
     super(code, position);
+  }
+
+  async showError(reason: string, _details?: unknown): Promise<void> {
+    this.lastErrorReason = reason;
+  }
+
+  get capturedError(): string | undefined {
+    return this.lastErrorReason;
   }
 
   async askUserInput(defaultValue?: string): Promise<string | undefined> {

@@ -20,8 +20,36 @@ export function runApplicableCommand(opts: ApplicableOptions): CommandResult {
     };
   }
 
-  const code = readFileSync(position.path, "utf-8");
-  const ast = parse(code);
+  let code: string;
+  try {
+    code = readFileSync(position.path, "utf-8");
+  } catch (err) {
+    return {
+      exitCode: EXIT_CODES.INVALID_ARGS,
+      stdout: opts.json
+        ? formatJsonResult({
+            status: "error",
+            reason: `Cannot read ${position.path}: ${(err as Error).message}`
+          })
+        : "",
+      stderr: `Cannot read ${position.path}: ${(err as Error).message}`
+    };
+  }
+  let ast;
+  try {
+    ast = parse(code);
+  } catch (err) {
+    return {
+      exitCode: EXIT_CODES.INTERNAL_ERROR,
+      stdout: opts.json
+        ? formatJsonResult({
+            status: "error",
+            reason: `Parse error in ${position.path}: ${(err as Error).message}`
+          })
+        : "",
+      stderr: `Parse error in ${position.path}: ${(err as Error).message}`
+    };
+  }
 
   const matches: {
     name: string;

@@ -111,8 +111,9 @@ export function listRefactorings(): {
 export function findRefactoring(
   name: string
 ): AnyRefactoringConfig | undefined {
-  const normalised = name.includes("-") ? toCamelCase(name) : name;
-  return ALL.find((cfg) => cfg.command.key === normalised);
+  return ALL.find(
+    (cfg) => cfg.command.key === name || toKebabCase(cfg.command.key) === name
+  );
 }
 
 function titleOf(cfg: AnyRefactoringConfig): string {
@@ -123,11 +124,12 @@ function titleOf(cfg: AnyRefactoringConfig): string {
 }
 
 function toKebabCase(camel: string): string {
-  return camel.replace(/[A-Z]/g, (m) => "-" + m.toLowerCase());
-}
-
-function toCamelCase(kebab: string): string {
-  return kebab.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
+  // Insert hyphens before every lower→upper transition so that
+  // `convertCommentToJSDoc` becomes `convert-comment-to-jsdoc` (matching
+  // the existing folder name under src/refactorings/) rather than
+  // `convert-comment-to-j-s-doc`. Runs of consecutive capitals are kept
+  // together as a single segment.
+  return camel.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
 }
 
 function toTitleCase(camel: string): string {

@@ -29,4 +29,16 @@ describe("registry", () => {
   it("returns undefined for unknown names", () => {
     expect(findRefactoring("does-not-exist")).toBeUndefined();
   });
+
+  it("collapses runs of capitals when generating kebab-case names", () => {
+    const names = listRefactorings().map((r) => r.name);
+    expect(names).toContain("convert-comment-to-jsdoc");
+    expect(names).not.toContain("convert-comment-to-j-s-doc");
+  });
+
+  it("resolves a refactoring whose original key contains a run of capitals", () => {
+    expect(findRefactoring("convert-comment-to-jsdoc")?.command.key).toBe(
+      "convertCommentToJSDoc"
+    );
+  });
 });

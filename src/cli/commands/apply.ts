@@ -81,7 +81,21 @@ export async function runApplyCommand(
     };
   }
 
-  const originalCode = readFileSync(parsedPosition.path, "utf-8");
+  let originalCode: string;
+  try {
+    originalCode = readFileSync(parsedPosition.path, "utf-8");
+  } catch (err) {
+    return {
+      exitCode: EXIT_CODES.INVALID_ARGS,
+      stdout: opts.json
+        ? formatJsonResult({
+            status: "error",
+            reason: `Cannot read ${parsedPosition.path}: ${(err as Error).message}`
+          })
+        : "",
+      stderr: `Cannot read ${parsedPosition.path}: ${(err as Error).message}`
+    };
+  }
   const codeWithMarkers = withSelectionMarkers(
     originalCode,
     parsedPosition.selection
@@ -164,7 +178,7 @@ export async function runApplyCommand(
       exitCode: EXIT_CODES.NOT_APPLICABLE,
       stdout: formatJsonResult({
         status: "not-applicable",
-        reason: "no change"
+        reason: editor.capturedError ?? "no change"
       })
     };
   }
@@ -208,6 +222,10 @@ function toQueued(r: UserResponse): QueuedResponse {
       return { type: "choice", value: r.value };
     case "new positions":
       return { type: "positions", value: r.positions };
+    default: {
+      const _exhaustive: never = r;
+      throw new Error(`Unknown response type: ${JSON.stringify(_exhaustive)}`);
+    }
   }
 }
 

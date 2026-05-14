@@ -8,6 +8,13 @@ import { decodeStateToken } from "./state-token";
 
 const POSITION_PATTERN = /^.+:\d+:\d+(-\d+:\d+)?$/;
 
+class InvalidArgsError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidArgsError";
+  }
+}
+
 export async function runCli(argv: string[]): Promise<CommandResult> {
   try {
     if (argv.length === 0) {
@@ -41,6 +48,13 @@ export async function runCli(argv: string[]): Promise<CommandResult> {
       stderr: `Unknown command '${first}'.`
     };
   } catch (err) {
+    if (err instanceof InvalidArgsError) {
+      return {
+        exitCode: EXIT_CODES.INVALID_ARGS,
+        stdout: "",
+        stderr: err.message
+      };
+    }
     const message =
       err instanceof Error ? (err.stack ?? err.message) : String(err);
     return {
@@ -94,14 +108,28 @@ function parseApplyFlags(args: string[]): ApplyOptions {
     strict: false
   });
 
-   
-  let responses: any[] = [];
-  if (values.responses) responses = JSON.parse(values.responses as string);
+  let responses: unknown[] = [];
+  if (values.responses) {
+    try {
+      responses = JSON.parse(values.responses as string);
+    } catch (err) {
+      throw new InvalidArgsError(
+        `--responses must be valid JSON: ${(err as Error).message}`
+      );
+    }
+  }
   if (values.input)
     responses.push({ id: "user-input", type: "input", value: values.input });
 
   if (values["state-token"]) {
-    const decoded = decodeStateToken(values["state-token"] as string);
+    let decoded;
+    try {
+      decoded = decodeStateToken(values["state-token"] as string);
+    } catch (err) {
+      throw new InvalidArgsError(
+        `--state-token is invalid: ${(err as Error).message}`
+      );
+    }
     responses = [...decoded.responses, ...responses];
   }
 
@@ -112,7 +140,7 @@ function parseApplyFlags(args: string[]): ApplyOptions {
     dryRun: values["dry-run"] as boolean,
     stdout: values.stdout as boolean,
     write: values.write as boolean,
-    responses,
+    responses: responses as ApplyOptions["responses"],
     workspaceRoot: values.workspace as string | undefined,
     ignoredFolders: values["ignored-folders"] as string[] | undefined,
     ignoredPatterns: values["ignored-patterns"] as string[] | undefined,

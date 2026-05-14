@@ -56,3 +56,30 @@ describe("apply --dry-run", () => {
     expect(readFileSync(file, "utf-8")).toBe(original);
   });
 });
+
+describe("apply --stdout", () => {
+  let dir: string;
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "abracadabra-apply-"));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it("prints the new code and leaves the file untouched", async () => {
+    const file = join(dir, "foo.ts");
+    const original = `if (a) {\n  b;\n} else {\n  c;\n}\n`;
+    writeFileSync(file, original);
+
+    const result = await runApplyCommand({
+      name: "flip-if-else",
+      position: `${file}:1:1`,
+      json: false,
+      stdout: true
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("if (!a)");
+    expect(readFileSync(file, "utf-8")).toBe(original);
+  });
+});

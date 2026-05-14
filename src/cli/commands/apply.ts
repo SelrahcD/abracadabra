@@ -108,6 +108,13 @@ export async function runApplyCommand(
     };
   }
 
+  if (opts.stdout) {
+    return {
+      exitCode: EXIT_CODES.OK,
+      stdout: newCode
+    };
+  }
+
   writeFileSync(parsedPosition.path, newCode);
   return {
     exitCode: EXIT_CODES.OK,

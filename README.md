@@ -28,6 +28,23 @@ Refactor Legacy Code in a snap! 👌
 
 ![Abracadabra in action][demo-abracadabra]
 
+## CLI
+
+In addition to the VS Code extension, Abracadabra ships as a command-line tool for AI agents and scripts.
+
+```bash
+npm install -g abracadabra
+abracadabra list                                            # list all refactorings
+abracadabra applicable src/foo.ts:23:10                     # what's applicable here?
+abracadabra apply flip-if-else src/foo.ts:23:10             # apply in place
+abracadabra apply flip-if-else src/foo.ts:23:10 --dry-run   # preview as diff
+abracadabra apply flip-if-else src/foo.ts:23:10 --stdout    # preview as new content
+```
+
+Refactorings that prompt the user (e.g. `rename-symbol`, `change-signature`) return a structured `needs-input` response with a `state-token`. Re-invoke the CLI with `--state-token <token>` and `--input <value>` (or `--responses '[...]'`) to continue the dialogue.
+
+See `docs/superpowers/specs/2026-05-14-abracadabra-cli-design.md` for the full design.
+
 ## Installation
 
 1. Click on the Extensions icon (usually on the left-hand side of your editor).
